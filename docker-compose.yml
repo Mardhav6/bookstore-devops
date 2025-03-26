@@ -1,0 +1,71 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./uploaded_img:/var/www/html/uploaded_img
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: bookstore
+      DB_PASSWORD: bookstore123
+      DB_NAME: bookstore_db
+    networks:
+      - bookstore_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: bookstore_db
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore123
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./shop_db.sql:/docker-entrypoint-initdb.d/shop_db.sql
+    networks:
+      - bookstore_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root123
+      PMA_USER: root
+      PMA_PASSWORD: root123
+      PMA_ARBITRARY: 1
+    networks:
+      - bookstore_network
+    depends_on:
+      db:
+        condition: service_healthy
+
+networks:
+  bookstore_network:
+    driver: bridge
+
+volumes:
+  mysql_data: 

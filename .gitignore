@@ -1,0 +1,42 @@
+# PHP
+vendor/
+composer.lock
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# Uploaded files
+uploaded_img/*
+!uploaded_img/.gitkeep
+
+# Node modules (if using any JavaScript)
+node_modules/
+
+# Build files
+/dist/
+/build/
+
+# Cache
+*.cache 
