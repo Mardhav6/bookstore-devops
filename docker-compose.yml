@@ -61,6 +61,26 @@ services:
       db:
         condition: service_healthy
 
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - bookstore_network
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    networks:
+      - bookstore_network
+    depends_on:
+      - prometheus
+
 networks:
   bookstore_network:
     driver: bridge
