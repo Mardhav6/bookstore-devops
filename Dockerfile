@@ -1,82 +1,46 @@
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: bookstore-app
-    ports:
-      - "8082:80"
-    volumes:
-      - .:/var/www/html
-      - ./uploaded_img:/var/www/html/uploaded_img
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      DB_HOST: db
-      DB_USER: bookstore
-      DB_PASSWORD: bookstore123
-      DB_NAME: bookstore_db
-    networks:
-      - bookstore_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health.php"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+FROM php:8.1-apache
 
-  db:
-    image: mysql:8.0
-    container_name: bookstore-db
-    command: --default-authentication-plugin=mysql_native_password
-    ports:
-      - "3307:3306"
-    environment:
-      MYSQL_DATABASE: bookstore_db
-      MYSQL_USER: bookstore
-      MYSQL_PASSWORD: bookstore123
-      MYSQL_ROOT_PASSWORD: root123
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./shop_db:/docker-entrypoint-initdb.d/shop_db
-    networks:
-      - bookstore_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot123"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    default-mysql-client
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: bookstore-phpmyadmin
-    ports:
-      - "8081:80"
-    environment:
-      PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: root123
-      PMA_USER: root
-      PMA_PASSWORD: root123
-      PMA_ARBITRARY: 1
-    networks:
-      - bookstore_network
-    depends_on:
-      db:
-        condition: service_healthy
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-  prometheus:
-    image: prom/prometheus
-    container_name: bookstore-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    networks:
-      - bookstore_network
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-networks:
-  bookstore_network:
-    driver: bridge
+# Get latest Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-volumes:
-  mysql_data:
+# Set working directory
+WORKDIR /var/www/html
+
+# Copy application files
+COPY . .
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html \
+    && chmod -R 777 /var/www/html/uploaded_img \
+    && chmod 644 .htaccess
+
+# Enable Apache modules
+RUN a2enmod rewrite
+
+# Configure Apache
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Start Apache
+CMD ["apache2-foreground"]
