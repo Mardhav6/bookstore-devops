@@ -22,10 +22,10 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . /var/www/html/
 
-# Create uploaded_img directory and set permissions
-RUN mkdir -p /var/www/html/uploaded_img && \
-    chown -R www-data:www-data /var/www/html && \
+# Set proper permissions
+RUN chown -R www-data:www-data /var/www/html && \
     chmod -R 755 /var/www/html && \
+    mkdir -p /var/www/html/uploaded_img && \
     chmod -R 777 /var/www/html/uploaded_img && \
     chmod 644 .htaccess
 
@@ -35,6 +35,13 @@ RUN a2enmod rewrite
 # Configure Apache
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
+# Add Apache configuration for directory permissions
+RUN echo "<Directory /var/www/html>" >> /etc/apache2/apache2.conf && \
+    echo "    Options Indexes FollowSymLinks" >> /etc/apache2/apache2.conf && \
+    echo "    AllowOverride All" >> /etc/apache2/apache2.conf && \
+    echo "    Require all granted" >> /etc/apache2/apache2.conf && \
+    echo "</Directory>" >> /etc/apache2/apache2.conf
 
 # Expose port 80
 EXPOSE 80
