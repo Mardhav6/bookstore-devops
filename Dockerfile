@@ -33,11 +33,8 @@ RUN chown -R www-data:www-data /var/www/html && \
 RUN a2enmod rewrite
 
 # Configure Apache
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
-
-# Add Apache configuration for directory permissions
-RUN echo "<Directory /var/www/html>" >> /etc/apache2/apache2.conf && \
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
+    echo "<Directory /var/www/html>" >> /etc/apache2/apache2.conf && \
     echo "    Options Indexes FollowSymLinks" >> /etc/apache2/apache2.conf && \
     echo "    AllowOverride All" >> /etc/apache2/apache2.conf && \
     echo "    Require all granted" >> /etc/apache2/apache2.conf && \
