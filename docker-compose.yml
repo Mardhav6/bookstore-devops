@@ -36,7 +36,7 @@ services:
       MYSQL_ROOT_PASSWORD: root123
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./shop_db.sql:/docker-entrypoint-initdb.d/shop_db.sql
+      - ./shop_db:/docker-entrypoint-initdb.d/shop_db
     networks:
       - bookstore_network
     healthcheck:
