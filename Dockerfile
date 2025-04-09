@@ -2,35 +2,32 @@ FROM php:8.1-apache
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
     libpng-dev \
-    libonig-dev \
-    libxml2-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
     zip \
     unzip \
-    default-mysql-client
+    && rm -rf /var/lib/apt/lists/*
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions including mysqli
-RUN docker-php-ext-install pdo_mysql mysqli mbstring exif pcntl bcmath gd
-
-# Get latest Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
+RUN docker-php-ext-install gd mysqli pdo pdo_mysql
 
 # Set working directory
 WORKDIR /var/www/html
 
 # Copy application files
-COPY . .
+COPY . /var/www/html/
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html \
-    && chmod -R 777 /var/www/html/uploaded_img \
-    && chmod 644 .htaccess
+# Create uploaded_img directory and set permissions
+RUN mkdir -p /var/www/html/uploaded_img && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html && \
+    chmod -R 777 /var/www/html/uploaded_img && \
+    chmod 644 .htaccess
 
 # Enable Apache modules
 RUN a2enmod rewrite
@@ -39,13 +36,9 @@ RUN a2enmod rewrite
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
-# Add specific Apache configuration for the application directory
-RUN echo "<Directory /var/www/html>" >> /etc/apache2/apache2.conf
-RUN echo "    Options Indexes FollowSymLinks" >> /etc/apache2/apache2.conf
-RUN echo "    AllowOverride All" >> /etc/apache2/apache2.conf
-RUN echo "    Require all granted" >> /etc/apache2/apache2.conf
-RUN echo "    DirectoryIndex index.php login.php" >> /etc/apache2/apache2.conf
-RUN echo "</Directory>" >> /etc/apache2/apache2.conf
+# Create www-data user and group
+RUN groupadd -g 1000 www-data && \
+    useradd -u 1000 -ms /bin/bash -g www-data www-data
 
 # Expose port 80
 EXPOSE 80
