@@ -26,7 +26,7 @@ services:
 
   db:
     image: mysql:8.0
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: --default-authentication-plugin=mysql_native_password
     ports:
       - "3307:3306"
     environment:
@@ -34,8 +34,6 @@ services:
       MYSQL_USER: bookstore
       MYSQL_PASSWORD: bookstore123
       MYSQL_ROOT_PASSWORD: root123
-      MYSQL_CHARSET: utf8mb4
-      MYSQL_COLLATION: utf8mb4_unicode_ci
     volumes:
       - mysql_data:/var/lib/mysql
       - ./shop_db.sql:/docker-entrypoint-initdb.d/shop_db.sql
