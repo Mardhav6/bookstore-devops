@@ -1,16 +1,19 @@
+# Enable URL rewriting
 RewriteEngine On
 RewriteBase /
 
-# If the request is not for a file or directory
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-
-# Redirect root to login.php
+# Redirect root to login page
 RewriteRule ^$ login.php [L]
 
-# Allow direct access to actual files
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+# Prevent directory listing
+Options -Indexes
+
+# Allow access to all files
+<FilesMatch "\.(php|html|htm|js|css|jpg|jpeg|png|gif)$">
+    Require all granted
+</FilesMatch>
 
 # Handle PHP files
-RewriteRule ^([^\.]+)$ $1.php [NC,L] 
+<FilesMatch "\.php$">
+    Require all granted
+</FilesMatch>
