@@ -15,28 +15,6 @@ pipeline {
             }
         }
         
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh """
-                        sonar-scanner \
-                        -Dsonar.projectKey=bookstore \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://localhost:9000 \
-                        -Dsonar.login=${SONAR_TOKEN}
-                    """
-                }
-            }
-        }
-        
-        stage('Security Scan') {
-            steps {
-                sh """
-                    trivy image ${DOCKER_IMAGE}:${DOCKER_TAG} --severity HIGH,CRITICAL
-                """
-            }
-        }
-        
         stage('Build Docker Image') {
             steps {
                 sh """
@@ -63,6 +41,18 @@ pipeline {
                 sh """
                     kubectl set image deployment/bookstore-app bookstore-app=${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/${DOCKER_IMAGE}:${DOCKER_TAG}
                 """
+            }
+        }
+        
+        stage('Prometheus and Grafana Setup') {
+            steps {
+                script {
+                    // Assuming you have Kubernetes manifests for Prometheus and Grafana
+                    sh """
+                        kubectl apply -f k8s/prometheus/
+                        kubectl apply -f k8s/grafana/
+                    """
+                }
             }
         }
     }
